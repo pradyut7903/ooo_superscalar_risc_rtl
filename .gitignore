@@ -1,0 +1,26 @@
+# Build / sim artifacts
+build/
+**/xsim.dir/
+**/*.log
+**/*.jou
+**/*.pb
+**/*.wdb
+**/*.vcd
+**/xsimSettings.ini
+**/Compile_Options.txt
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local scratch
+scratch/
+*.bak

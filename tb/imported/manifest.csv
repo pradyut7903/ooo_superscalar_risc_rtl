@@ -1,0 +1,17 @@
+name,source,imem,dmem,text_words,data_words
+alu,tb/imported/alu.s,tb/imported/alu.imem.hex,tb/imported/alu.dmem.hex,42,24
+branch,tb/imported/branch.s,tb/imported/branch.imem.hex,tb/imported/branch.dmem.hex,17,0
+branchtaken,tb/imported/branchtaken.s,tb/imported/branchtaken.imem.hex,tb/imported/branchtaken.dmem.hex,37,0
+cp1_example,tb/imported/cp1_example.s,tb/imported/cp1_example.imem.hex,tb/imported/cp1_example.dmem.hex,8,0
+cp2_example,tb/imported/cp2_example.s,tb/imported/cp2_example.imem.hex,tb/imported/cp2_example.dmem.hex,3,0
+custom_riscv,tb/imported/custom_riscv.s,tb/imported/custom_riscv.imem.hex,tb/imported/custom_riscv.dmem.hex,62,207
+dependency_test,tb/imported/dependency_test.s,tb/imported/dependency_test.imem.hex,tb/imported/dependency_test.dmem.hex,25,0
+jump,tb/imported/jump.s,tb/imported/jump.imem.hex,tb/imported/jump.dmem.hex,8,0
+load,tb/imported/load.s,tb/imported/load.imem.hex,tb/imported/load.dmem.hex,36,44
+load_store_grinder,tb/imported/load_store_grinder.s,tb/imported/load_store_grinder.imem.hex,tb/imported/load_store_grinder.dmem.hex,30,44
+ooo_test,tb/imported/ooo_test.s,tb/imported/ooo_test.imem.hex,tb/imported/ooo_test.dmem.hex,22,0
+riscv_mem,tb/imported/riscv_mem.s,tb/imported/riscv_mem.imem.hex,tb/imported/riscv_mem.dmem.hex,68,207
+simple_mem,tb/imported/simple_mem.s,tb/imported/simple_mem.imem.hex,tb/imported/simple_mem.dmem.hex,12,44
+simple_st,tb/imported/simple_st.s,tb/imported/simple_st.imem.hex,tb/imported/simple_st.dmem.hex,12,44
+store,tb/imported/store.s,tb/imported/store.imem.hex,tb/imported/store.dmem.hex,27,14
+super_simple,tb/imported/super_simple.s,tb/imported/super_simple.imem.hex,tb/imported/super_simple.dmem.hex,4,24

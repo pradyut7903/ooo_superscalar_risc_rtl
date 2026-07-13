@@ -1,0 +1,5 @@
+name,source,imem,dmem,text_words,data_words
+ilp_loop,tb/workloads_hex/ilp_loop.s,tb/workloads_hex/ilp_loop.imem.hex,tb/workloads_hex/ilp_loop.dmem.hex,20,0
+matmul8,tb/workloads_hex/matmul8.s,tb/workloads_hex/matmul8.imem.hex,tb/workloads_hex/matmul8.dmem.hex,39,192
+mem_stream,tb/workloads_hex/mem_stream.s,tb/workloads_hex/mem_stream.imem.hex,tb/workloads_hex/mem_stream.dmem.hex,19,256
+mix_bench,tb/workloads_hex/mix_bench.s,tb/workloads_hex/mix_bench.imem.hex,tb/workloads_hex/mix_bench.dmem.hex,25,128

@@ -6,6 +6,7 @@
 // Victim ways reserved from allocate until fill install / MSHR free.
 // Secondary miss deferred if that MSHR completes fill the same cycle.
 // Same-cycle multi-port MSHR/waiter updates use shadow state.
+// Same-cycle store hits to one way merge onto a running line copy (NBA-safe).
 // UFP drain is single-flight; additional filled MSHRs wait on m_ufp_pending.
 // ============================================================================
 module dcache
@@ -275,6 +276,10 @@ module dcache
       automatic logic got_victim, is_hit, need_wb;
       automatic logic [MSHR_W-1:0] mi, free_i, hit_mi;
       automatic cache_line_t line;
+      automatic cache_line_t hit_store_line;
+      automatic logic        hit_store_line_valid;
+      automatic logic [SET_W-1:0] hit_store_set;
+      automatic logic [WAY_W-1:0] hit_store_way;
       automatic logic any_store, saw_mshr, drain_busy;
       automatic logic [$clog2(WQ+1)-1:0] wc_shadow [MSHRS];
       automatic logic m_valid_shadow [MSHRS];
@@ -284,6 +289,12 @@ module dcache
       mem_resp_valid <= '0;
       resp_slot = 0;
       drain_busy = drain_active;
+      // Same-cycle store hits to one way must merge onto a running line copy;
+      // each NBA from stale data_arr would drop the earlier store's bytes.
+      hit_store_line_valid = 1'b0;
+      hit_store_line = '0;
+      hit_store_set = '0;
+      hit_store_way = '0;
       for (int i = 0; i < MSHRS; i++) begin
         wc_shadow[i] = w_count[i];
         m_valid_shadow[i] = m_valid[i];
@@ -377,9 +388,19 @@ module dcache
             lru_mat[pipe_set[p]][hw][hw] <= 1'b0;
             if (pipe_write[p]) begin
               if (resp_slot < WIDTH) begin
-                data_arr[pipe_set[p]][hw] <=
-                    apply_store(data_arr[pipe_set[p]][hw], pipe_addr[p],
-                                pipe_wdata[p], pipe_wstrb[p]);
+                if (hit_store_line_valid &&
+                    (hit_store_set == pipe_set[p]) && (hit_store_way == hw)) begin
+                  hit_store_line = apply_store(hit_store_line, pipe_addr[p],
+                                               pipe_wdata[p], pipe_wstrb[p]);
+                end else begin
+                  hit_store_line = apply_store(data_arr[pipe_set[p]][hw],
+                                               pipe_addr[p], pipe_wdata[p],
+                                               pipe_wstrb[p]);
+                  hit_store_line_valid = 1'b1;
+                  hit_store_set = pipe_set[p];
+                  hit_store_way = hw;
+                end
+                data_arr[pipe_set[p]][hw] <= hit_store_line;
                 dirty_bits[pipe_set[p]][hw] <= 1'b1;
                 mem_resp_valid[resp_slot] <= 1'b1;
                 mem_resp_id[resp_slot] <= pipe_id[p];
@@ -390,7 +411,13 @@ module dcache
               end
             end else begin
               hit_pend_valid[p] <= 1'b1;
-              hit_pend_rdata[p] <= word_from_line(data_arr[pipe_set[p]][hw], pipe_addr[p]);
+              // If a same-cycle earlier store hit this way, read the merged line.
+              if (hit_store_line_valid &&
+                  (hit_store_set == pipe_set[p]) && (hit_store_way == hw))
+                hit_pend_rdata[p] <= word_from_line(hit_store_line, pipe_addr[p]);
+              else
+                hit_pend_rdata[p] <= word_from_line(data_arr[pipe_set[p]][hw],
+                                                    pipe_addr[p]);
               hit_pend_id[p] <= pipe_id[p];
               hit_pend_drop[p] <= 1'b0;
             end

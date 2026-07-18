@@ -202,6 +202,71 @@ module tb_dcache;
       end else $display("ok   LRU victim reloaded from DRAM");
     end
 
+    // ---- dual-UFP same-cycle store-store hit merge (same line, diff words) ----
+    if (DCACHE_UFP_PORTS >= 2 && WIDTH >= 2) begin
+      data_t r0, r1;
+      bit got0, got1;
+      rst = 1'b1;
+      repeat (2) @(posedge clk);
+      rst = 1'b0;
+      repeat (2) @(posedge clk);
+
+      // Install line with known pattern, then dual hit-stores in one cycle.
+      cpu_op(1'b1, 32'h400, 32'h1111_1111, 4'hF, mem_id_t'(40), rdata, rid);
+      cpu_op(1'b1, 32'h404, 32'h2222_2222, 4'hF, mem_id_t'(41), rdata, rid);
+
+      @(negedge clk);
+      mem_req_valid = '0;
+      mem_req_valid[0] = 1'b1;
+      mem_req_valid[1] = 1'b1;
+      mem_req_write[0] = 1'b1;
+      mem_req_write[1] = 1'b1;
+      mem_req_addr[0] = 32'h400;
+      mem_req_addr[1] = 32'h404;
+      mem_req_wdata[0] = 32'hAAAA_AAAA;
+      mem_req_wdata[1] = 32'hBBBB_BBBB;
+      mem_req_wstrb[0] = 4'hF;
+      mem_req_wstrb[1] = 4'hF;
+      mem_req_id[0] = mem_id_t'(42);
+      mem_req_id[1] = mem_id_t'(43);
+      for (int k = 0; k < 50; k++) begin
+        @(posedge clk); #1;
+        if (mem_req_ready[0] && mem_req_ready[1]) begin
+          @(negedge clk);
+          mem_req_valid = '0;
+          break;
+        end
+      end
+      // Wait for both store acks
+      got0 = 1'b0; got1 = 1'b0;
+      for (int k = 0; k < 50; k++) begin
+        @(posedge clk);
+        for (int lane = 0; lane < WIDTH; lane++) begin
+          if (mem_resp_valid[lane]) begin
+            if (mem_resp_id[lane] == mem_id_t'(42)) got0 = 1'b1;
+            if (mem_resp_id[lane] == mem_id_t'(43)) got1 = 1'b1;
+          end
+        end
+        if (got0 && got1) break;
+      end
+      if (!got0 || !got1) begin
+        $display("FAIL dual store-hit ack got0=%0d got1=%0d", got0, got1);
+        errors++;
+      end
+
+      cpu_op(1'b0, 32'h400, '0, 4'h0, mem_id_t'(44), rdata, rid);
+      if (rdata !== 32'hAAAA_AAAA) begin
+        $display("FAIL dual store-hit word0 got %h exp AAAAAAAA", rdata);
+        errors++;
+      end
+      cpu_op(1'b0, 32'h404, '0, 4'h0, mem_id_t'(45), rdata, rid);
+      if (rdata !== 32'hBBBB_BBBB) begin
+        $display("FAIL dual store-hit word1 got %h exp BBBBBBBB", rdata);
+        errors++;
+      end else if (got0 && got1)
+        $display("ok   dual-UFP same-cycle store-store hit merge");
+    end
+
     // ---- dual-UFP same-cycle secondary miss (PORTS>=2) ----
     if (DCACHE_UFP_PORTS >= 2 && WIDTH >= 2) begin
       data_t r0, r1;
